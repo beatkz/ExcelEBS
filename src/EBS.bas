@@ -3,8 +3,6 @@ Option Explicit
 Sub SimulateFuture()
     Dim SheetName As String
     SheetName = ActiveSheet.Name
-    Dim maxRow As Long
-    maxRow = getMaxRow(SheetName, Range("A1").column)
     
     Dim currentRow As Long
     currentRow = 8
@@ -15,6 +13,9 @@ Sub SimulateFuture()
     
     Call init
     Call fillUndoneTaskNo
+    
+    Dim maxRow As Long
+    maxRow = getMaxRow(SheetName, Range("A1").column)
     
     'Pause Auto Calculation
     Application.Calculation = xlCalculationManual
