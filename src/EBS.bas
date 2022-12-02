@@ -21,6 +21,19 @@ Sub SimulateFuture()
     Application.Calculation = xlCalculationManual
     
     Do While currentRow <= maxRow
+        'Fill VLOOKUP formulas
+        With Range("B" & currentRow & ":C" & currentRow)
+            .WrapText = True
+        End With
+        Range("B" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,2,FALSE),"""")"
+        Range("C" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,3,FALSE),"""")"
+        Range("D" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,5,FALSE),"""")"
+        Range("E" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,6,FALSE),"""")"
+
         For col = 6 To 105
             Cells(currentRow, col) = _
             "=" & Cells(currentRow, "E") & _
@@ -34,10 +47,27 @@ Sub SimulateFuture()
 End Sub
 
 Sub init()
+    '--- Cell font Config ---
+    Const FONT_NAME As String = "Meiryo UI"
+    Const FONT_SIZE As Integer = 8
+    '--- End Cell font Config ---
+    
     'Clear all simulated times
-    Range("F8:DA256").Clear
+    Range("F8:DA108").Clear
     'Clear all undone task numbers
-    Range("A8:A256").Clear
+    Range("A8:E108").Clear
+    
+    With Range("A1:DA108").Font
+        .Name = FONT_NAME
+        .Size = FONT_SIZE
+    End With
+    
+    ' Total Hours formula:
+    ' "=SUM(F8:F108)"
+    ' Total Days formula:
+    ' "=ROUNDUP(F2/$B$4,2)"
+    ' Probability formula:
+    ' "=NORM.DIST(F3,AVERAGE($F$3:$DA$3),STDEV.S($F$3:$DA$3),TRUE)"
 End Sub
 
 Sub fillUndoneTaskNo()

@@ -12,9 +12,16 @@ Option Explicit
 Private Sub Worksheet_Change(ByVal Target As Range)
     Dim tgtRow As Long
     Const COL_STAT As Long = 1
-    Const COL_PROJ As Long = 3
+    Const COL_TASK As Long = 2
     Dim t As Range
-    If Target.column = COL_STAT Then
+    
+    'Workaround: When you select the entire row, skip this.
+    If Target.Count >= 4096 Then
+        Exit Sub
+    End If
+    
+    Select Case Target.column
+    Case COL_STAT
         For Each t In Target
             tgtRow = t.Row
             If t.Value = "Ï" Or t.Value = "Done" Then
@@ -23,15 +30,17 @@ Private Sub Worksheet_Change(ByVal Target As Range)
                 Range("D" & tgtRow, "G" & tgtRow).Font.Strikethrough = False
             End If
         Next
-    ElseIf Target.column = COL_PROJ Then
+    Case COL_TASK
         Dim TaskWs As Worksheet
         Set TaskWs = ThisWorkbook.Worksheets("Tasks")
         For Each t In Target
             tgtRow = t.Row
-            'Write Proj.Name
-            Dim CellVal As String
-            CellVal = "=VLOOKUP(C" & tgtRow & ",Projects!A:C,3,FALSE)"
-            TaskWs.Range("G" & tgtRow).Formula = CellVal
+            
+            Range("C" & tgtRow).Validation.Delete
+            With Range("C" & tgtRow).Validation
+                .Add Type:=xlValidateList, _
+                    Formula1:="=Projects!$A$3:$A$15"
+            End With
             
             'Write Actual Hour(s)
             Dim sumActHour As String
@@ -46,8 +55,9 @@ Private Sub Worksheet_Change(ByVal Target As Range)
             
             'Write Velocity
             TaskWs.Range("I" & tgtRow).Formula = _
-            "=IF(H" & tgtRow & ">0,ROUNDUP(F" & tgtRow & "/H" & tgtRow & ",2),0)"
+            "=IF(H" & tgtRow & ">0,ROUNDUP(G" & tgtRow & "/H" & tgtRow & ",2),0)"
         Next
         Set TaskWs = Nothing
-    End If
+    Case Else
+    End Select
 End Sub

@@ -21,7 +21,10 @@ Private Sub Worksheet_Change(ByVal Target As Range)
             tgtRow = t.Row
             'Write Task Name
             If t.Value <> "" Then
-                TSheetWs.Range("G" & tgtRow).Formula = "=VLOOKUP(A" & tgtRow & ",Tasks!B:D,3,FALSE)"
+                '=IFERROR(VLOOKUP(A3,Tasks!B:D,3,FALSE),VLOOKUP(A3,OldTasks!B:D,3,FALSE))
+                TSheetWs.Range("G" & tgtRow).Formula = _
+                "=IFERROR(VLOOKUP(A" & tgtRow & ",Tasks!B:D,3,FALSE)," & _
+                "VLOOKUP(A" & tgtRow & ",OldTasks!B:D,3,FALSE))"
             End If
         Next
     ElseIf Target.column = COL_END_TIME Then
