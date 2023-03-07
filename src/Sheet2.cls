@@ -56,8 +56,37 @@ Private Sub Worksheet_Change(ByVal Target As Range)
             'Write Velocity
             TaskWs.Range("I" & tgtRow).Formula = _
             "=IF(H" & tgtRow & ">0,ROUNDUP(G" & tgtRow & "/H" & tgtRow & ",2),0)"
+            
+            'Write Display TaskName
+            TaskWs.Range("K" & tgtRow).Formula = _
+            "=CONCAT(D" & tgtRow & ",CHAR(10),J" & tgtRow & ")"
         Next
         Set TaskWs = Nothing
     Case Else
     End Select
+End Sub
+
+Sub ShowUndoneTasks()
+With ActiveSheet
+    .Range("$A$2:$I$4096").AutoFilter Field:=1, Criteria1:="=Pend", _
+        Operator:=xlOr, Criteria2:="="
+End With
+End Sub
+
+Sub OpenAll()
+Dim i As Long, Title As String
+With ActiveSheet
+    'オートフィルタが適用されているか判定
+    If .AutoFilterMode Then
+        'オートフィルタの列数
+        For i = 1 To .AutoFilter.Filters.Count
+            '絞り込みされているか判定
+            If .AutoFilter.Filters(i).On Then
+                '全てを表示
+                .AutoFilter.ShowAllData
+                Exit For
+            End If
+        Next i
+    End If
+End With
 End Sub

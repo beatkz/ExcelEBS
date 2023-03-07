@@ -1,49 +1,15 @@
 Attribute VB_Name = "EBS"
 Option Explicit
 Sub SimulateFuture()
-    Dim SheetName As String
-    SheetName = ActiveSheet.Name
-    
-    Dim currentRow As Long
-    currentRow = 8
-    
-    Dim col As Long
-    
     Range("A8").Select
     
     Call init
     Call fillUndoneTaskNo
+    Call fillVLOOKUPFormulas
+    Call appendToShipDateLog
     
-    Dim maxRow As Long
-    maxRow = getMaxRow(SheetName, Range("A1").column)
-    
-    'Pause Auto Calculation
-    Application.Calculation = xlCalculationManual
-    
-    Do While currentRow <= maxRow
-        'Fill VLOOKUP formulas
-        With Range("B" & currentRow & ":C" & currentRow)
-            .WrapText = True
-        End With
-        Range("B" & currentRow).Formula = _
-        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,2,FALSE),"""")"
-        Range("C" & currentRow).Formula = _
-        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,3,FALSE),"""")"
-        Range("D" & currentRow).Formula = _
-        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,5,FALSE),"""")"
-        Range("E" & currentRow).Formula = _
-        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$I$102,6,FALSE),"""")"
-
-        For col = 6 To 105
-            Cells(currentRow, col) = _
-            "=" & Cells(currentRow, "E") & _
-            "/" & randomPickedVelocityfromTasks()
-        Next col
-        currentRow = currentRow + 1
-    Loop
-    
-    'Resume Auto Calculation
-    Application.Calculation = xlCalculationAutomatic
+    Range("A8").Select
+    ActiveWorkbook.Save
 End Sub
 
 Sub init()
@@ -68,6 +34,10 @@ Sub init()
     ' "=ROUNDUP(F2/$B$4,2)"
     ' Probability formula:
     ' "=NORM.DIST(F3,AVERAGE($F$3:$DA$3),STDEV.S($F$3:$DA$3),TRUE)"
+    ' Rank formula:
+    ' "=RANK.EQ(F3,$F$3:$DA$3,1)"
+    ' p formula:
+    ' "=(F5-0.5)/100"
 End Sub
 
 Sub fillUndoneTaskNo()
@@ -93,6 +63,50 @@ Sub fillUndoneTaskNo()
     Application.ScreenUpdating = True
 End Sub
 
+Sub fillVLOOKUPFormulas()
+    Dim SheetName As String
+    SheetName = ActiveSheet.Name
+    
+    Dim currentRow As Long
+    currentRow = 8
+    
+    Dim col As Long
+    
+    'Pause Auto Calculation
+    Application.Calculation = xlCalculationManual
+    
+    Dim maxRow As Long
+    maxRow = getMaxRow(SheetName, Range("A1").column)
+    
+    Do While currentRow <= maxRow
+        ' Project Name
+        Range("B" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$K$103,2,FALSE),"""")"
+        ' Task Name With SubTasks
+        Range("C" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$K$103,10,FALSE),"""")"
+        ' Priority
+        Range("D" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$K$103,5,FALSE),"""")"
+        ' Estimate Hours
+        Range("E" & currentRow).Formula = _
+        "=IFERROR(VLOOKUP(A" & currentRow & ",Tasks!$B$2:$K$103,6,FALSE),"""")"
+
+        For col = 6 To 105
+            Cells(currentRow, col) = _
+            "=" & Cells(currentRow, "E") & _
+            "/" & randomPickedVelocityfromTasks()
+        Next col
+        
+        With Range("B" & currentRow & ":C" & currentRow)
+            .WrapText = True
+        End With
+        currentRow = currentRow + 1
+    Loop
+    'Resume Auto Calculation
+    Application.Calculation = xlCalculationAutomatic
+End Sub
+
 Function randomPickedVelocityfromTasks() As Double
     Dim maxRow As Long
     maxRow = getMaxRow("Tasks", Range("A1").column)
@@ -116,6 +130,31 @@ Redraw:
     
     drawVelocity = velocity
 End Function
+
+Sub appendToShipDateLog()
+    Application.ScreenUpdating = False
+    
+    Sheets("Sim").Select
+    Range("B3:D3").Select
+    Selection.Copy
+    Sheets("ShipDateLog").Select
+    Dim lastRow As Long
+    lastRow = getMaxRow("ShipDateLog", Range("A1").column)
+    
+    If Cells(lastRow, Range("A1").column).Value <> Date Then
+        lastRow = lastRow + 1
+    End If
+    
+    Cells(lastRow, Range("A1").column).Value = Date
+
+    Cells(lastRow, Range("B1").column).Select
+    Selection.PasteSpecial Paste:=xlPasteValues, _
+    Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+    Sheets("Sim").Select
+    
+    Application.ScreenUpdating = True
+End Sub
 
 Function getMaxRow(SheetName As String, column As Long) As Long
     getMaxRow = Sheets(SheetName).Cells(Rows.Count, column).End(xlUp).Row
